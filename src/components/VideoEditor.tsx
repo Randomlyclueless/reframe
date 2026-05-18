@@ -1,8 +1,11 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+
+
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useVideoEditor } from "@/hooks/useVideoEditor";
 import FileUpload from "./FileUpload";
 import VideoPreview from "./VideoPreview";
+import ThumbnailStrip from "./ThumbnailStrip";
 import PresetSelector from "./PresetSelector";
 import FramingControl from "./FramingControl";
 import TrimControl from "./TrimControl";
@@ -47,7 +50,9 @@ export default function VideoEditor() {
   const {
     file, duration, recipe, status, progress,
     result, error, updateRecipe,
-    handleFileSelect,fileError, handleExport, cancelExport, reset, resetSettings,
+    handleFileSelect, fileError, handleExport, cancelExport, reset, resetSettings,
+    videoRef,
+    seekTo,
   } = useVideoEditor();
   const [copied, setCopied] = useState(false);
   const downloadRef = useRef<HTMLDivElement>(null);
@@ -63,6 +68,17 @@ export default function VideoEditor() {
   }, [status]);
 
   const isProcessing = status === "loading-engine" || status === "exporting";
+
+  const videoSrc = useMemo(
+    () => (file ? URL.createObjectURL(file) : null),
+    [file]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (videoSrc) URL.revokeObjectURL(videoSrc);
+    };
+  }, [videoSrc]);
 
   return (
     <div className="min-h-screen relative flex flex-col" style={{ background: "var(--bg)" }}>
@@ -106,7 +122,18 @@ export default function VideoEditor() {
 
               {file && (
                 <div className="mt-4 animate-fade-in">
-                  <VideoPreview file={file} recipe={recipe} />
+                  <VideoPreview file={file} videoRef={videoRef} />
+
+                  <div className="mt-3">
+                    <ThumbnailStrip
+                      videoSrc={videoSrc}
+                      duration={duration}
+                      currentTime={videoRef.current?.currentTime ?? 0}
+                      trimStart={recipe.trimStart ?? 0}
+                      trimEnd={recipe.trimEnd ?? duration}
+                      onSeek={seekTo}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -246,10 +273,10 @@ export default function VideoEditor() {
             )}
 
             {status === "error" && error && (
-                 <div
-                    role="status"
-                    className="flex items-start gap-3 p-4 bg-film-50 border border-film-200 rounded-xl text-film-800 text-sm animate-fade-in"
-                  >
+              <div
+                role="status"
+                className="flex items-start gap-3 p-4 bg-film-50 border border-film-200 rounded-xl text-film-800 text-sm animate-fade-in"
+              >
                 <AlertTriangle size={16} className="shrink-0 mt-0.5 text-film-500" />
                 <div className="flex-1">
                   <p className="font-heading font-bold text-sm">Error</p>
