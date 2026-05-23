@@ -150,7 +150,8 @@ export function buildVideoFilter(recipe: EditRecipe, targetW: number, targetH: n
   return filters.join(",");
 }
 
-export function buildAudioFilter(speed: number, normalizeAudio: boolean): string {
+ export function buildAudioFilter(speed: number, normalizeAudio: boolean): string {
+  if (speed <= 0) return "";
   const filters: string[] = [];
 
   let remaining = speed;
@@ -438,6 +439,7 @@ export async function exportVideo(
       onProgress(100);
       return {
         blobUrl: URL.createObjectURL(blob),
+        blob,
         size: blob.size,
         width: targetW,
         height: targetH,
@@ -497,6 +499,7 @@ export async function exportVideo(
       onProgress(100);
       return {
         blobUrl: URL.createObjectURL(blob),
+        blob,
         size: blob.size,
         width: targetW,
         height: targetH,
@@ -511,6 +514,7 @@ export async function exportVideo(
     onProgress(100);
     return {
       blobUrl: URL.createObjectURL(blob),
+      blob,
       size: blob.size,
       width: targetW,
       height: targetH,
